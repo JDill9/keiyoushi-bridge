@@ -56,6 +56,14 @@ def main():
             ],
         })
 
+    (out / "repo.json").write_text(json.dumps({
+        "meta": {
+            "name": idx.name,
+            "shortName": idx.badgeLabel,
+            "website": idx.contact.website,
+            "signingKeyFingerprint": idx.signingKey,
+        }
+    }, indent=2))
     (out / "index.json").write_text(json.dumps(entries, indent=2))
     (out / "index.min.json").write_text(json.dumps(entries, separators=(",", ":")))
     print(f"Mirrored {len(entries)} extensions ({skipped} skipped by language filter)")
