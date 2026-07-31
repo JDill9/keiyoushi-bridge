@@ -1,0 +1,40 @@
+name: Sync bridge
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 */6 * * *'
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install tools
+        run: pip install protobuf grpcio-tools
+
+      - name: Generate proto bindings
+        run: python -m grpc_tools.protoc -I. --python_out=. index.proto
+
+      - name: Convert and mirror
+        run: python convert.py
+
+      - name: Publish repo branch
+        run: |
+          cd out
+          git init -b repo
+          git config user.name "bridge-bot"
+          git config user.email "bridge-bot@users.noreply.github.com"
+          git add -A
+          git commit -m "Sync $(date -u +%FT%TZ)"
+          git push -f "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" repo
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
